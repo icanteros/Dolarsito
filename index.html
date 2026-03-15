@@ -56,6 +56,19 @@
       overflow-x: hidden;
     }
 
+    /* Fondo principal de lluvia de plata */
+    .bg-lluviaplata {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('images/lluviaplata.png') center/cover no-repeat;
+      z-index: -2;
+      opacity: 0.25;
+      /* Reducida la opacidad para que no compita agresivamente con el texto frontal */
+    }
+
     /* Fondo animado — colores bandera argentina */
     body::before {
       content: '';
@@ -90,8 +103,49 @@
 
     /* ── Header ── */
     header {
+      position: relative;
       text-align: center;
       margin-bottom: 2.5rem;
+      padding: 2.5rem 1rem;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(116, 172, 223, 0.15);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Gradient overlay to make text readable */
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(6, 9, 26, 0.5) 0%, rgba(6, 9, 26, 0.85) 100%);
+      z-index: 0;
+    }
+
+    header .header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: -1;
+      opacity: 0.9;
+    }
+
+    .header-banner {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
 
     .flag {
@@ -128,6 +182,7 @@
       color: var(--muted2);
       font-size: 0.88rem;
       margin-top: 0.4rem;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
     }
 
     /* ── Status Bar ── */
@@ -261,14 +316,50 @@
       background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
     }
 
-    /* Featured card (primary) */
+    /* ── Contenedor Fondo Principales ── */
+    .main-bg-wrapper {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+      border: 1px solid rgba(116, 172, 223, 0.15);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      padding: 1.5rem;
+    }
+
+    .main-bg-wrapper::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(6, 9, 26, 0.65) 0%, rgba(6, 9, 26, 0.9) 100%);
+      z-index: 1;
+    }
+
+    .mq-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+    }
+
+    .main-bg-wrapper>.cards-grid {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Featured card (primary) - Transparente */
     .card.featured {
-      border-color: rgba(116, 172, 223, 0.28);
-      background: rgba(116, 172, 223, 0.07);
+      border-color: rgba(116, 172, 223, 0.2);
+      background: transparent;
+      box-shadow: none;
     }
 
     .card.featured::before {
-      background: linear-gradient(90deg, transparent, rgba(116, 172, 223, 0.75), transparent);
+      display: none;
     }
 
     .card-flag {
@@ -909,6 +1000,7 @@
       /* Header — more compact */
       header {
         margin-bottom: 1.5rem;
+        padding: 1.8rem 0.8rem;
       }
 
       header h1 {
@@ -1105,13 +1197,19 @@
 </head>
 
 <body>
+  <!-- Escenario de Fondo: Lluvia de Plata -->
+  <div class="bg-lluviaplata"></div>
+
   <div class="wrapper">
 
     <!-- Header -->
     <header>
-      <span class="flag" role="img" aria-label="Bandera argentina">🇦🇷</span>
-      <h1>Dolarsito 🪙</h1>
-      <p>Argentina · cotizaciones en tiempo real en pesos ARS · actualización cada 30 s</p>
+      <img src="images/banderARG.png" alt="" class="header-bg" />
+      <div class="header-content">
+        <span class="flag" role="img" aria-label="Dolarsito flota">DOLARSITO🧉</span>
+        <h1>Tu cotización de confianza</h1>
+        <p>Cotizaciones en tiempo real en pesos ARS 💸 - Actualización en 30 s</p>
+      </div>
     </header>
 
     <!-- Status -->
@@ -1129,32 +1227,39 @@
 
     <!-- ═══ PRINCIPALES ═══ -->
     <div class="section-title">⭐ Principales</div>
-    <div class="cards-grid" id="main-grid">
-      <!-- Dólar Oficial -->
-      <div class="card featured" id="c-oficial">
-        <div class="card-flag">💵</div>
-        <div class="card-label">Dólar Oficial</div>
-        <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="oficial-buy">—</span></div>
-        <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="oficial-sell">—</span></div>
-        <div class="card-spread">Spread <span class="sv" id="oficial-spread">—</span> <span
-            class="card-badge">BNA</span></div>
-      </div>
-      <!-- Euro -->
-      <div class="card featured" id="c-euro">
-        <div class="card-flag">💶</div>
-        <div class="card-label">Euro</div>
-        <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="euro-buy">—</span></div>
-        <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="euro-sell">—</span></div>
-        <div class="card-spread">Spread <span class="sv" id="euro-spread">—</span> <span class="card-badge">EUR</span>
+
+    <div class="main-bg-wrapper">
+      <!-- "Buscar una imagen que se ajuste al diseño"
+      <img src="images/dolARG.png" alt="" class="mq-bg" /> -->
+      <div class="cards-grid" id="main-grid">
+
+        <!-- Dólar Oficial -->
+        <div class="card featured" id="c-oficial">
+          <div class="card-flag">💵</div>
+          <div class="card-label">Dólar Oficial</div>
+          <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="oficial-buy">—</span></div>
+          <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="oficial-sell">—</span></div>
+          <div class="card-spread">Spread <span class="sv" id="oficial-spread">—</span> <span
+              class="card-badge">BNA</span>
+          </div>
         </div>
-      </div>
-      <!-- Real Brasileño -->
-      <div class="card featured" id="c-real">
-        <div class="card-flag">🇧🇷</div>
-        <div class="card-label">Real Brasileño</div>
-        <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="real-buy">—</span></div>
-        <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="real-sell">—</span></div>
-        <div class="card-spread">Spread <span class="sv" id="real-spread">—</span> <span class="card-badge">BRL</span>
+        <!-- Euro -->
+        <div class="card featured" id="c-euro">
+          <div class="card-flag">💶</div>
+          <div class="card-label">Euro</div>
+          <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="euro-buy">—</span></div>
+          <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="euro-sell">—</span></div>
+          <div class="card-spread">Spread <span class="sv" id="euro-spread">—</span> <span class="card-badge">EUR</span>
+          </div>
+        </div>
+        <!-- Real Brasileño -->
+        <div class="card featured" id="c-real">
+          <div class="card-flag">🇧🇷</div>
+          <div class="card-label">Real Brasileño</div>
+          <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="real-buy">—</span></div>
+          <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="real-sell">—</span></div>
+          <div class="card-spread">Spread <span class="sv" id="real-spread">—</span> <span class="card-badge">BRL</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1200,7 +1305,7 @@
         <div class="dc-buy" id="ds-oficial-c">Compra: —</div>
       </div>
       <div class="dolar-card" id="d-blue">
-        <div class="dc-label">Blue / Paralelo</div>
+        <div class="dc-label">Dólar Blue</div>
         <div class="dc-sell" id="ds-blue-v">—</div>
         <div class="dc-buy" id="ds-blue-c">Compra: —</div>
       </div>
@@ -1210,7 +1315,7 @@
         <div class="dc-buy" id="ds-mep-c">Compra: —</div>
       </div>
       <div class="dolar-card" id="d-ccl">
-        <div class="dc-label">Contado c/ Liqui</div>
+        <div class="dc-label">CCL</div>
         <div class="dc-sell" id="ds-ccl-v">—</div>
         <div class="dc-buy" id="ds-ccl-c">Compra: —</div>
       </div>
@@ -1220,7 +1325,7 @@
         <div class="dc-buy" id="ds-cripto-c">Compra: —</div>
       </div>
       <div class="dolar-card" id="d-tarjeta">
-        <div class="dc-label">Tarjeta / Qatar</div>
+        <div class="dc-label">Dólar Tarjeta</div>
         <div class="dc-sell" id="ds-tarjeta-v">—</div>
         <div class="dc-buy" id="ds-tarjeta-c">Compra: —</div>
       </div>
@@ -1230,7 +1335,7 @@
     <div class="section-title" style="margin-top:0.5rem">🧮 Calculadora · ARS → Divisas</div>
     <div class="calc-card">
       <div class="calc-input-wrap">
-        <span class="calc-prefix">ARS $</span>
+        <span class="calc-prefix">ARS💲</span>
         <input id="calc-input" type="number" min="0" step="1" inputmode="numeric" placeholder="Ingresá el monto…"
           aria-label="Monto en pesos argentinos" />
       </div>
