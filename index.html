@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dolarsito · Cotizaciones en Tiempo Real</title>
+  <meta name="description" content="Dolarsito" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #06091a;
+      /* Azul marino oscuro */
+      --bg2: #08102a;
+      --card: rgba(116, 172, 223, 0.05);
+      /* Celeste argentino */
+      --card-border: rgba(116, 172, 223, 0.13);
+      --card-hover: rgba(116, 172, 223, 0.09);
+      --accent: #74ACDF;
+      /* Celeste bandera */
+      --accent2: #a8d4f7;
+      /* Celeste claro */
+      --accent-dim: rgba(116, 172, 223, 0.15);
+      --accent-glow: rgba(116, 172, 223, 0.38);
+      --green: #74ACDF;
+      /* Reutilizado para flash-up */
+      --green-dim: rgba(116, 172, 223, 0.12);
+      --red: #ff5252;
+      --red-dim: rgba(255, 82, 82, 0.12);
+      --gold: #F6B40E;
+      /* Sol de Mayo */
+      --blue: #5bb8f5;
+      --purple: #ce93d8;
+      --text: #eef4ff;
+      /* Blanco azulado */
+      --muted: #3a5070;
+      --muted2: #7aa0c4;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Fondo animado — colores bandera argentina */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 10% 5%, rgba(116, 172, 223, 0.15) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 90% 90%, rgba(74, 140, 210, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(116, 172, 223, 0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(116, 172, 223, 0.06) 1px, transparent 0);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .flag {
+      font-size: 2.8rem;
+      display: block;
+      margin-bottom: 0.8rem;
+      filter: drop-shadow(0 0 16px var(--accent-glow));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 60%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--muted2);
+      font-size: 0.88rem;
+      margin-top: 0.4rem;
+    }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .live-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 0 var(--accent-glow);
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0% {
+        box-shadow: 0 0 0 0 rgba(116, 172, 223, 0.8);
+      }
+
+      70% {
+        box-shadow: 0 0 0 10px rgba(116, 172, 223, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(116, 172, 223, 0);
+      }
+    }
+
+    .live-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .sep {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    #last-update {
+      font-size: 0.75rem;
+      color: var(--muted2);
+    }
+
+    #countdown {
+      font-size: 0.72rem;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(116, 172, 223, 0.25);
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* ── Error ── */
+    #error-msg {
+      background: rgba(255, 82, 82, 0.08);
+      border: 1px solid rgba(255, 82, 82, 0.22);
+      border-radius: 12px;
+      padding: 0.9rem 1.2rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #ff8a80;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    /* ── Section Headers ── */
+    .section-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 1rem;
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(116, 172, 223, 0.25), transparent);
+    }
+
+    /* ── Cards Grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.5rem 1.5rem 1.3rem;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s, background 0.2s;
+      cursor: default;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(116, 172, 223, 0.40);
+      background: var(--card-hover);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+    }
+
+    /* Featured card (primary) */
+    .card.featured {
+      border-color: rgba(116, 172, 223, 0.28);
+      background: rgba(116, 172, 223, 0.07);
+    }
+
+    .card.featured::before {
+      background: linear-gradient(90deg, transparent, rgba(116, 172, 223, 0.75), transparent);
+    }
+
+    .card-flag {
+      font-size: 1.3rem;
+      margin-bottom: 0.4rem;
+      line-height: 1;
+    }
+
+    .card-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 0.6rem;
+    }
+
+    .card-buy,
+    .card-sell {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--muted2);
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .card-buy span.val,
+    .card-sell span.val {
+      font-size: clamp(1.3rem, 2.5vw, 1.55rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      font-feature-settings: 'tnum';
+      transition: color 0.3s;
+    }
+
+    .card-buy span.lbl {
+      font-size: 0.62rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .card-sell span.lbl {
+      font-size: 0.62rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .card-spread {
+      margin-top: 0.55rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid rgba(116, 172, 223, 0.10);
+      font-size: 0.68rem;
+      color: var(--muted2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-spread span.sv {
+      font-weight: 700;
+      color: var(--gold);
+      font-feature-settings: 'tnum';
+    }
+
+    .card-badge {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.5rem;
+      border-radius: 8px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(116, 172, 223, 0.25);
+    }
+
+    /* Flash */
+    @keyframes flash-up {
+
+      0%,
+      100% {
+        color: inherit;
+      }
+
+      30% {
+        color: var(--green);
+      }
+    }
+
+    @keyframes flash-down {
+
+      0%,
+      100% {
+        color: inherit;
+      }
+
+      30% {
+        color: var(--red);
+      }
+    }
+
+    .flash-up {
+      animation: flash-up 0.9s ease;
+    }
+
+    .flash-down {
+      animation: flash-down 0.9s ease;
+    }
+
+    /* ── Ver Más Button ── */
+    .ver-mas-wrap {
+      text-align: center;
+      margin: 0.5rem 0 1.5rem;
+    }
+
+    #ver-mas-btn {
+      background: var(--accent-dim);
+      border: 1px solid rgba(116, 172, 223, 0.28);
+      border-radius: 50px;
+      padding: 0.55rem 1.6rem;
+      color: var(--accent);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #ver-mas-btn:hover {
+      background: rgba(116, 172, 223, 0.18);
+      border-color: rgba(116, 172, 223, 0.50);
+      transform: scale(1.03);
+    }
+
+    #ver-mas-btn .arrow {
+      display: inline-block;
+      transition: transform 0.3s;
+      font-style: normal;
+      font-size: 0.9rem;
+    }
+
+    #ver-mas-btn.open .arrow {
+      transform: rotate(180deg);
+    }
+
+    /* ── Collapsible Section ── */
+    .collapsible {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .collapsible.open {
+      max-height: 600px;
+    }
+
+    /* ── Dollar Variants Strip ── */
+    .dollar-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .dolar-card {
+      background: rgba(64, 196, 255, 0.04);
+      border: 1px solid rgba(64, 196, 255, 0.12);
+      border-radius: 14px;
+      padding: 1.1rem 1.1rem 0.9rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .dolar-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(64, 196, 255, 0.3);
+    }
+
+    .dolar-card .dc-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: rgba(64, 196, 255, 0.7);
+      margin-bottom: 0.45rem;
+    }
+
+    .dolar-card .dc-sell {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--blue);
+      font-feature-settings: 'tnum';
+      margin-bottom: 0.2rem;
+    }
+
+    .dolar-card .dc-buy {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted2);
+      font-feature-settings: 'tnum';
+    }
+
+    /* ── History Chart ── */
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.6rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .chart-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted2);
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.7rem;
+      color: var(--muted2);
+      font-weight: 500;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    canvas#history-chart {
+      width: 100% !important;
+      height: 160px !important;
+      display: block;
+    }
+
+    .chart-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted2);
+      font-size: 0.82rem;
+    }
+
+    /* ── Loading skeleton ── */
+    @keyframes shimmer {
+      0% {
+        background-position: -400px 0;
+      }
+
+      100% {
+        background-position: 400px 0;
+      }
+    }
+
+    .skeleton {
+      display: inline-block;
+      background: linear-gradient(90deg, rgba(0, 230, 118, 0.05) 0%, rgba(0, 230, 118, 0.12) 50%, rgba(0, 230, 118, 0.05) 100%);
+      background-size: 400px 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      border-radius: 6px;
+      color: transparent;
+      user-select: none;
+    }
+
+    /* ── Calculadora ── */
+    .calc-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.6rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calc-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(116, 172, 223, 0.6), transparent);
+    }
+
+    .calc-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.4rem;
+      flex-wrap: wrap;
+    }
+
+    .calc-prefix {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    #calc-input {
+      flex: 1;
+      min-width: 160px;
+      background: rgba(116, 172, 223, 0.07);
+      border: 1.5px solid rgba(116, 172, 223, 0.28);
+      border-radius: 12px;
+      padding: 0.7rem 1rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      text-align: right;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    #calc-input::-webkit-inner-spin-button,
+    #calc-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+
+    #calc-input:focus {
+      border-color: rgba(116, 172, 223, 0.65);
+      background: rgba(116, 172, 223, 0.12);
+      box-shadow: 0 0 0 3px rgba(116, 172, 223, 0.12);
+    }
+
+    #calc-input::placeholder {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 1.1rem;
+    }
+
+    .calc-hint {
+      font-size: 0.7rem;
+      color: var(--muted2);
+      margin-bottom: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .calc-hint span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Results table */
+    .calc-results {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .calc-row {
+      display: grid;
+      grid-template-columns: 1.6rem 1fr auto auto;
+      align-items: center;
+      gap: 0.6rem 0.75rem;
+      background: rgba(116, 172, 223, 0.04);
+      border: 1px solid rgba(116, 172, 223, 0.09);
+      border-radius: 12px;
+      padding: 0.7rem 0.9rem;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .calc-row:hover {
+      background: rgba(116, 172, 223, 0.09);
+      border-color: rgba(116, 172, 223, 0.22);
+    }
+
+    .calc-row .cr-flag {
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+
+    .calc-row .cr-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted2);
+    }
+
+    .calc-row .cr-name small {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+
+    .calc-row .cr-result {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      font-feature-settings: 'tnum';
+      text-align: right;
+      transition: color 0.25s;
+    }
+
+    .calc-row .cr-result.pending {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 0.85rem;
+    }
+
+    .calc-row .cr-copy {
+      background: rgba(116, 172, 223, 0.10);
+      border: 1px solid rgba(116, 172, 223, 0.22);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.28rem 0.55rem;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .calc-row .cr-copy:hover {
+      background: rgba(116, 172, 223, 0.22);
+      transform: scale(1.04);
+    }
+
+    .calc-row .cr-copy:active {
+      transform: scale(0.96);
+    }
+
+    .calc-row .cr-copy.copied {
+      background: rgba(116, 172, 223, 0.32);
+      border-color: rgba(116, 172, 223, 0.55);
+      color: #fff;
+    }
+
+    .calc-no-data {
+      font-size: 0.8rem;
+      color: var(--muted2);
+      text-align: center;
+      padding: 1rem;
+    }
+
+    /* Separator line between groups */
+    .calc-sep {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(116, 172, 223, 0.18), transparent);
+      margin: 0.3rem 0;
+    }
+
+    /* Responsive: on very small screens name label wraps below flag */
+    @media (max-width: 360px) {
+      .calc-row {
+        grid-template-columns: 1.4rem 1fr auto auto;
+        gap: 0.4rem 0.55rem;
+        padding: 0.6rem 0.7rem;
+      }
+
+      .calc-row .cr-result {
+        font-size: 0.92rem;
+      }
+
+      #calc-input {
+        font-size: 1.2rem;
+      }
+
+      .calc-prefix {
+        font-size: 1.3rem;
+      }
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.7rem;
+      margin-top: 1rem;
+    }
+
+    footer a {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE WEB DESIGN — 4 breakpoints
+       ══════════════════════════════════════════ */
+
+    /* ── Base fluid adjustments (all screens) ── */
+    .cards-grid {
+      grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+    }
+
+    .dollar-strip {
+      grid-template-columns: repeat(auto-fill, minmax(min(155px, 100%), 1fr));
+    }
+
+    /* ── Large Desktop: ≥ 1024px ── */
+    @media (min-width: 1024px) {
+      .wrapper {
+        padding: 3rem 2rem 5rem;
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .dollar-strip {
+        grid-template-columns: repeat(6, 1fr);
+      }
+
+      .card-buy span.val,
+      .card-sell span.val {
+        font-size: 1.65rem;
+      }
+    }
+
+    /* ── Tablet landscape / small desktop: 769px – 1023px ── */
+    @media (min-width: 769px) and (max-width: 1023px) {
+      .wrapper {
+        padding: 2.5rem 1.5rem 4rem;
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .dollar-strip {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* ── Tablet portrait: 481px – 768px ── */
+    @media (min-width: 481px) and (max-width: 768px) {
+      .wrapper {
+        padding: 2rem 1.25rem 3.5rem;
+      }
+
+      header h1 {
+        font-size: clamp(1.6rem, 5vw, 2.2rem);
+      }
+
+      header p {
+        font-size: 0.82rem;
+      }
+
+      .flag {
+        font-size: 2.2rem;
+      }
+
+      .status-bar {
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .dollar-strip {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.8rem;
+      }
+
+      .card {
+        padding: 1.3rem 1.3rem 1.1rem;
+        border-radius: 16px;
+      }
+
+      .card-buy span.val,
+      .card-sell span.val {
+        font-size: clamp(1.25rem, 3.5vw, 1.5rem);
+      }
+
+      .dolar-card {
+        padding: 1rem;
+        border-radius: 12px;
+      }
+
+      .dolar-card .dc-sell {
+        font-size: 1.05rem;
+      }
+
+      .chart-card {
+        padding: 1.3rem;
+      }
+
+      canvas#history-chart {
+        height: 140px !important;
+      }
+
+      .section-title {
+        font-size: 0.66rem;
+      }
+
+      footer {
+        font-size: 0.68rem;
+      }
+    }
+
+    /* ── Mobile: ≤ 480px ── */
+    @media (max-width: 480px) {
+      .wrapper {
+        padding: 1.25rem 0.9rem 3rem;
+      }
+
+      /* Header — more compact */
+      header {
+        margin-bottom: 1.5rem;
+      }
+
+      header h1 {
+        font-size: clamp(1.4rem, 6vw, 1.9rem);
+        letter-spacing: -0.025em;
+      }
+
+      header p {
+        font-size: 0.78rem;
+      }
+
+      .flag {
+        font-size: 2rem;
+        margin-bottom: 0.6rem;
+      }
+
+      /* Status bar — wrap gracefully */
+      .status-bar {
+        gap: 0.4rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.72rem;
+      }
+
+      #last-update {
+        font-size: 0.7rem;
+      }
+
+      #countdown {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.5rem;
+      }
+
+      /* Grids — 2 columns on mobile */
+      .cards-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.1rem;
+      }
+
+      .dollar-strip {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+        margin-bottom: 1.2rem;
+      }
+
+      /* Cards — tighter padding, bigger touch targets */
+      .card {
+        padding: 1.1rem 1rem 1rem;
+        border-radius: 14px;
+        min-height: 130px;
+      }
+
+      .card-flag {
+        font-size: 1.15rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .card-label {
+        font-size: 0.6rem;
+        margin-bottom: 0.45rem;
+      }
+
+      .card-buy span.val,
+      .card-sell span.val {
+        font-size: clamp(1.15rem, 5vw, 1.4rem);
+      }
+
+      .card-buy span.lbl,
+      .card-sell span.lbl {
+        font-size: 0.58rem;
+      }
+
+      .card-spread {
+        font-size: 0.62rem;
+        margin-top: 0.45rem;
+        padding-top: 0.45rem;
+      }
+
+      .card-badge {
+        font-size: 0.54rem;
+        padding: 0.14rem 0.4rem;
+      }
+
+      /* Dollar strip cards */
+      .dolar-card {
+        padding: 0.9rem 0.85rem 0.75rem;
+        border-radius: 12px;
+        min-height: 90px;
+      }
+
+      .dolar-card .dc-label {
+        font-size: 0.58rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .dolar-card .dc-sell {
+        font-size: 1rem;
+      }
+
+      .dolar-card .dc-buy {
+        font-size: 0.65rem;
+      }
+
+      /* Section titles */
+      .section-title {
+        font-size: 0.62rem;
+        gap: 0.4rem;
+        margin-bottom: 0.75rem;
+      }
+
+      /* Ver más button — full touch-friendly */
+      #ver-mas-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.65rem 1.2rem;
+        font-size: 0.76rem;
+        border-radius: 14px;
+      }
+
+      .ver-mas-wrap {
+        margin: 0.4rem 0 1.2rem;
+      }
+
+      /* Chart */
+      .chart-card {
+        padding: 1.1rem;
+        border-radius: 14px;
+        margin-bottom: 1.5rem;
+      }
+
+      .chart-header {
+        margin-bottom: 1rem;
+      }
+
+      .chart-title {
+        font-size: 0.65rem;
+      }
+
+      .chart-legend {
+        font-size: 0.65rem;
+        gap: 0.7rem;
+      }
+
+      canvas#history-chart {
+        height: 130px !important;
+      }
+
+      /* Collapsible — allow more height for wrapped items */
+      .collapsible.open {
+        max-height: 800px;
+      }
+
+      /* Footer */
+      footer {
+        font-size: 0.65rem;
+        margin-top: 0.75rem;
+        line-height: 1.6;
+      }
+    }
+
+    /* ── Extra small: ≤ 360px (small Android phones) ── */
+    @media (max-width: 360px) {
+      .wrapper {
+        padding: 1rem 0.7rem 2.5rem;
+      }
+
+      .cards-grid {
+        gap: 0.6rem;
+      }
+
+      .dollar-strip {
+        gap: 0.55rem;
+      }
+
+      .card {
+        padding: 0.9rem 0.85rem 0.85rem;
+        min-height: 120px;
+      }
+
+      .card-buy span.val,
+      .card-sell span.val {
+        font-size: clamp(1rem, 5.5vw, 1.25rem);
+      }
+
+      .dolar-card {
+        padding: 0.75rem;
+      }
+
+      .dolar-card .dc-sell {
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+
+    <!-- Header -->
+    <header>
+      <span class="flag" role="img" aria-label="Bandera argentina">🇦🇷</span>
+      <h1>Dolarsito 🪙</h1>
+      <p>Argentina · cotizaciones en tiempo real en pesos ARS · actualización cada 30 s</p>
+    </header>
+
+    <!-- Status -->
+    <div class="status-bar">
+      <span class="live-dot"></span>
+      <span class="live-label">En vivo</span>
+      <span class="sep">·</span>
+      <span id="last-update">Cargando…</span>
+      <span class="sep">·</span>
+      <span id="countdown">⟳ 30s</span>
+    </div>
+
+    <!-- Error -->
+    <div id="error-msg">⚠️ No se pudo obtener la cotización. Reintentando…</div>
+
+    <!-- ═══ PRINCIPALES ═══ -->
+    <div class="section-title">⭐ Principales</div>
+    <div class="cards-grid" id="main-grid">
+      <!-- Dólar Oficial -->
+      <div class="card featured" id="c-oficial">
+        <div class="card-flag">💵</div>
+        <div class="card-label">Dólar Oficial</div>
+        <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="oficial-buy">—</span></div>
+        <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="oficial-sell">—</span></div>
+        <div class="card-spread">Spread <span class="sv" id="oficial-spread">—</span> <span
+            class="card-badge">BNA</span></div>
+      </div>
+      <!-- Euro -->
+      <div class="card featured" id="c-euro">
+        <div class="card-flag">💶</div>
+        <div class="card-label">Euro</div>
+        <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="euro-buy">—</span></div>
+        <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="euro-sell">—</span></div>
+        <div class="card-spread">Spread <span class="sv" id="euro-spread">—</span> <span class="card-badge">EUR</span>
+        </div>
+      </div>
+      <!-- Real Brasileño -->
+      <div class="card featured" id="c-real">
+        <div class="card-flag">🇧🇷</div>
+        <div class="card-label">Real Brasileño</div>
+        <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="real-buy">—</span></div>
+        <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="real-sell">—</span></div>
+        <div class="card-spread">Spread <span class="sv" id="real-spread">—</span> <span class="card-badge">BRL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ver más button -->
+    <div class="ver-mas-wrap">
+      <button id="ver-mas-btn" aria-expanded="false">
+        Ver más monedas <span class="arrow">▾</span>
+      </button>
+    </div>
+
+    <!-- ═══ MÁS MONEDAS (collapsible) ═══ -->
+    <div class="collapsible" id="more-currencies">
+      <div class="section-title">🌍 Otras monedas</div>
+      <div class="cards-grid" id="secondary-grid">
+        <!-- Peso Chileno -->
+        <div class="card" id="c-clp">
+          <div class="card-flag">🇨🇱</div>
+          <div class="card-label">Peso Chileno</div>
+          <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="clp-buy">—</span></div>
+          <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="clp-sell">—</span></div>
+          <div class="card-spread">Spread <span class="sv" id="clp-spread">—</span> <span class="card-badge">CLP</span>
+          </div>
+        </div>
+        <!-- Peso Uruguayo -->
+        <div class="card" id="c-uyu">
+          <div class="card-flag">🇺🇾</div>
+          <div class="card-label">Peso Uruguayo</div>
+          <div class="card-buy"><span class="lbl">Comprás</span><span class="val" id="uyu-buy">—</span></div>
+          <div class="card-sell"><span class="lbl">Vendés</span><span class="val" id="uyu-sell">—</span></div>
+          <div class="card-spread">Spread <span class="sv" id="uyu-spread">—</span> <span class="card-badge">UYU</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VARIANTES DEL DÓLAR ═══ -->
+    <div class="section-title" style="margin-top:0.5rem">💵 Variantes del dólar</div>
+    <div class="dollar-strip" id="dollar-strip">
+      <div class="dolar-card" id="d-oficial2">
+        <div class="dc-label">Oficial BNA</div>
+        <div class="dc-sell" id="ds-oficial-v">—</div>
+        <div class="dc-buy" id="ds-oficial-c">Compra: —</div>
+      </div>
+      <div class="dolar-card" id="d-blue">
+        <div class="dc-label">Blue / Paralelo</div>
+        <div class="dc-sell" id="ds-blue-v">—</div>
+        <div class="dc-buy" id="ds-blue-c">Compra: —</div>
+      </div>
+      <div class="dolar-card" id="d-mep">
+        <div class="dc-label">Dólar MEP / Bolsa</div>
+        <div class="dc-sell" id="ds-mep-v">—</div>
+        <div class="dc-buy" id="ds-mep-c">Compra: —</div>
+      </div>
+      <div class="dolar-card" id="d-ccl">
+        <div class="dc-label">Contado c/ Liqui</div>
+        <div class="dc-sell" id="ds-ccl-v">—</div>
+        <div class="dc-buy" id="ds-ccl-c">Compra: —</div>
+      </div>
+      <div class="dolar-card" id="d-cripto">
+        <div class="dc-label">Cripto / USDT</div>
+        <div class="dc-sell" id="ds-cripto-v">—</div>
+        <div class="dc-buy" id="ds-cripto-c">Compra: —</div>
+      </div>
+      <div class="dolar-card" id="d-tarjeta">
+        <div class="dc-label">Tarjeta / Qatar</div>
+        <div class="dc-sell" id="ds-tarjeta-v">—</div>
+        <div class="dc-buy" id="ds-tarjeta-c">Compra: —</div>
+      </div>
+    </div>
+
+    <!-- ═══ CALCULADORA ARS ═══ -->
+    <div class="section-title" style="margin-top:0.5rem">🧮 Calculadora · ARS → Divisas</div>
+    <div class="calc-card">
+      <div class="calc-input-wrap">
+        <span class="calc-prefix">ARS $</span>
+        <input id="calc-input" type="number" min="0" step="1" inputmode="numeric" placeholder="Ingresá el monto…"
+          aria-label="Monto en pesos argentinos" />
+      </div>
+      <div class="calc-hint">Calculado con la tasa de <span>compra</span> · se actualiza automáticamente</div>
+      <div class="calc-results" id="calc-results">
+        <div class="calc-no-data">Ingresá un monto para ver la conversión</div>
+      </div>
+    </div>
+
+    <!-- ═══ GRÁFICO DE SESIÓN ═══ -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">📊 Historial de sesión · Dólar Oficial</span>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:#74ACDF"></span>Compra</span>
+          <span><span class="legend-dot" style="background:#F6B40E"></span>Venta</span>
+        </div>
+      </div>
+      <canvas id="history-chart" style="display:none"></canvas>
+      <div id="chart-empty" class="chart-empty">Acumulando datos… se necesitan al menos 2 actualizaciones.</div>
+    </div>
+
+    <footer>
+      Fuente: <a href="https://dolarapi.com" target="_blank" rel="noopener">dolarapi.com</a> ·
+      actualización automática cada 30 s · <span id="footer-time"></span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── Config ── */
+      const REFRESH = 30;
+      const MAX_HIST = 50;
+      const BASE = 'https://dolarapi.com/v1';
+
+      /* ── State ── */
+      let prev = {};
+      let hist = { compra: [], venta: [], labels: [] };
+      let cd = REFRESH;
+      let tmr = null;
+
+      /* ── Helpers ── */
+      const $ = id => document.getElementById(id);
+      const ars = n => n != null
+        ? '$ ' + Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '—';
+      const spread = (c, v) => (c != null && v != null) ? ars(v - c) : '—';
+      const hhmm = d => d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      function flash(el, cur, prev_) {
+        if (prev_ == null || cur === prev_) return;
+        el.classList.remove('flash-up', 'flash-down');
+        void el.offsetWidth;
+        el.classList.add(cur > prev_ ? 'flash-up' : 'flash-down');
+      }
+
+      /* ── Fetch all ── */
+      async function fetchAll() {
+        try {
+          const [dolResp, cotResp] = await Promise.all([
+            fetch(BASE + '/dolares', { cache: 'no-store' }),
+            fetch(BASE + '/cotizaciones', { cache: 'no-store' }),
+          ]);
+          if (!dolResp.ok || !cotResp.ok) throw new Error('HTTP error');
+          const dolares = await dolResp.json();
+          const cotizaciones = await cotResp.json();
+          $('error-msg').style.display = 'none';
+          render(dolares, cotizaciones);
+        } catch (e) {
+          console.error('[Dashboard]', e);
+          $('error-msg').style.display = 'block';
+        }
+      }
+
+      /* ── Render ── */
+      function render(dolares, cotizaciones) {
+        const now = new Date();
+        $('last-update').textContent = 'Actualizado ' + hhmm(now);
+        $('footer-time').textContent = now.toLocaleDateString('es-AR', { dateStyle: 'medium' });
+
+        /* Índice de dólares por casa */
+        const dol = {};
+        dolares.forEach(d => { dol[d.casa] = d; });
+
+        /* Índice de cotizaciones por moneda */
+        const cot = {};
+        cotizaciones.forEach(c => { cot[(c.moneda || '').toUpperCase()] = c; });
+
+        /* ── Oficial ── */
+        const of = dol['oficial'] || {};
+        setCard('oficial', of.compra, of.venta);
+        setStrip('oficial', of.compra, of.venta);
+
+        /* ── Blue ── */
+        const bl = dol['blue'] || {};
+        setStrip('blue', bl.compra, bl.venta);
+
+        /* ── MEP / Bolsa ── */
+        const me = dol['bolsa'] || dol['mep'] || {};
+        setStrip('mep', me.compra, me.venta);
+
+        /* ── CCL ── */
+        const cc = dol['contadoconliqui'] || dol['ccl'] || {};
+        setStrip('ccl', cc.compra, cc.venta);
+
+        /* ── Cripto ── */
+        const cr = dol['cripto'] || {};
+        setStrip('cripto', cr.compra, cr.venta);
+
+        /* ── Tarjeta ── */
+        const ta = dol['tarjeta'] || dol['qatar'] || {};
+        setStrip('tarjeta', ta.compra, ta.venta);
+
+        /* ── Cotizaciones ── */
+        // Euro: EUR
+        const eu = findCot(cotizaciones, ['EUR', 'euro', 'Euro']);
+        setCard('euro', eu?.compra, eu?.venta);
+
+        // Real: BRL
+        const re = findCot(cotizaciones, ['BRL', 'real', 'Real']);
+        setCard('real', re?.compra, re?.venta);
+
+        // Peso Chileno: CLP
+        const cl = findCot(cotizaciones, ['CLP', 'Chile', 'chile']);
+        setCard('clp', cl?.compra, cl?.venta);
+
+        // Peso Uruguayo: UYU
+        const uy = findCot(cotizaciones, ['UYU', 'Uruguay', 'uruguay']);
+        setCard('uyu', uy?.compra, uy?.venta);
+
+        /* ── Actualizar calculadora ── */
+        updateCalcRates(dolares, cotizaciones);
+        runCalc();
+
+        /* ── History for oficial ── */
+        const label = hhmm(now).slice(0, 5);
+        hist.compra.push(of.compra ?? null);
+        hist.venta.push(of.venta ?? null);
+        hist.labels.push(label);
+        if (hist.compra.length > MAX_HIST) { hist.compra.shift(); hist.venta.shift(); hist.labels.shift(); }
+        drawChart();
+      }
+
+      function findCot(arr, keys) {
+        for (const k of keys) {
+          const found = arr.find(c =>
+            (c.moneda && c.moneda.toUpperCase() === k.toUpperCase()) ||
+            (c.casa && c.casa.toLowerCase() === k.toLowerCase()) ||
+            (c.nombre && c.nombre.toLowerCase().includes(k.toLowerCase()))
+          );
+          if (found) return found;
+        }
+        return null;
+      }
+
+      function setCard(id, compra, venta) {
+        const buyEl = $(id + '-buy');
+        const sellEl = $(id + '-sell');
+        const sprEl = $(id + '-spread');
+        if (!buyEl) return;
+
+        flash(buyEl, compra, prev[id + '-c']);
+        flash(sellEl, venta, prev[id + '-v']);
+
+        buyEl.textContent = ars(compra);
+        sellEl.textContent = ars(venta);
+        sprEl.textContent = spread(compra, venta);
+
+        prev[id + '-c'] = compra;
+        prev[id + '-v'] = venta;
+      }
+
+      function setStrip(id, compra, venta) {
+        const vEl = $('ds-' + id + '-v');
+        const cEl = $('ds-' + id + '-c');
+        if (!vEl) return;
+        vEl.textContent = ars(venta);
+        cEl.textContent = 'Compra: ' + ars(compra);
+      }
+
+      /* ── Chart ── */
+      function drawChart() {
+        const canvas = $('history-chart');
+        const empty = $('chart-empty');
+        const pts = hist.compra.filter(v => v != null).length;
+
+        if (pts < 2) { canvas.style.display = 'none'; empty.style.display = 'block'; return; }
+        canvas.style.display = 'block'; empty.style.display = 'none';
+
+        const dpr = window.devicePixelRatio || 1;
+        const W = canvas.parentElement.clientWidth - 32;
+        const H = 160;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, W, H);
+
+        const pL = 52, pR = 12, pT = 10, pB = 32;
+        const iW = W - pL - pR, iH = H - pT - pB;
+        const n = hist.compra.length;
+
+        const allV = [...hist.compra, ...hist.venta].filter(v => v != null);
+        const minV = Math.min(...allV) * 0.9995, maxV = Math.max(...allV) * 1.0005;
+        const rng = maxV - minV || 1;
+
+        const toX = i => pL + (i / (n - 1)) * iW;
+        const toY = v => pT + (1 - (v - minV) / rng) * iH;
+
+        // Grid
+        ctx.strokeStyle = 'rgba(116,172,223,0.08)'; ctx.lineWidth = 1;
+        for (let g = 0; g <= 4; g++) {
+          const y = pT + (g / 4) * iH;
+          ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(pL + iW, y); ctx.stroke();
+          const val = maxV - (g / 4) * rng;
+          ctx.fillStyle = 'rgba(129,168,136,0.7)'; ctx.font = `10px Inter,sans-serif`;
+          ctx.textAlign = 'right'; ctx.fillText('$' + val.toFixed(2), pL - 5, y + 4);
+        }
+
+        function line(series, col, gradCol) {
+          const valid = series.filter(v => v != null);
+          if (valid.length < 2) return;
+          const grad = ctx.createLinearGradient(0, pT, 0, pT + iH);
+          grad.addColorStop(0, gradCol + '28'); grad.addColorStop(1, gradCol + '00');
+          ctx.beginPath();
+          series.forEach((v, i) => { if (v == null) return; i === 0 ? ctx.moveTo(toX(i), toY(v)) : ctx.lineTo(toX(i), toY(v)); });
+          ctx.lineTo(toX(n - 1), pT + iH); ctx.lineTo(toX(0), pT + iH); ctx.closePath();
+          ctx.fillStyle = grad; ctx.fill();
+          ctx.beginPath();
+          series.forEach((v, i) => { if (v == null) return; i === 0 ? ctx.moveTo(toX(i), toY(v)) : ctx.lineTo(toX(i), toY(v)); });
+          ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+          const last = series[series.length - 1];
+          if (last) {
+            const x = toX(series.length - 1), y = toY(last);
+            ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = col; ctx.fill();
+            ctx.strokeStyle = document.body.style.background || '#050f08';
+            ctx.lineWidth = 2; ctx.stroke();
+          }
+        }
+
+        line(hist.compra, '#74ACDF', '#74ACDF');
+        line(hist.venta, '#F6B40E', '#F6B40E');
+
+        // X labels
+        ctx.fillStyle = 'rgba(129,168,136,0.6)'; ctx.font = '10px Inter,sans-serif'; ctx.textAlign = 'center';
+        const step = Math.max(1, Math.floor(n / 6));
+        for (let i = 0; i < n; i += step) ctx.fillText(hist.labels[i], toX(i), H - pB + 16);
+        ctx.fillText(hist.labels[n - 1], toX(n - 1), H - pB + 16);
+      }
+
+      /* ══════════════════════════════════════
+         CALCULADORA ARS → DIVISAS
+         ══════════════════════════════════════ */
+      // Tasas de compra actualizadas en cada fetch
+      const calcRates = {};
+
+      const CALC_CURRENCIES = [
+        // Dólares
+        { id: 'oficial', flag: '💵', name: 'Dólar Oficial', code: 'USD', group: 'dolar' },
+        { id: 'blue', flag: '💵', name: 'Dólar Blue', code: 'Blue', group: 'dolar' },
+        { id: 'mep', flag: '💵', name: 'Dólar MEP', code: 'MEP', group: 'dolar' },
+        { id: 'ccl', flag: '💵', name: 'Dólar CCL', code: 'CCL', group: 'dolar' },
+        { id: 'cripto', flag: '💵', name: 'Cripto / USDT', code: 'USDT', group: 'dolar' },
+        { id: 'tarjeta', flag: '💳', name: 'Tarjeta/Qatar', code: 'TAR', group: 'dolar' },
+        // Otras monedas
+        { id: 'euro', flag: '💶', name: 'Euro', code: 'EUR', group: 'cot' },
+        { id: 'real', flag: '🇧🇷', name: 'Real Brasileño', code: 'BRL', group: 'cot' },
+        { id: 'clp', flag: '🇨🇱', name: 'Peso Chileno', code: 'CLP', group: 'cot' },
+        { id: 'uyu', flag: '🇺🇾', name: 'Peso Uruguayo', code: 'UYU', group: 'cot' },
+      ];
+
+      function updateCalcRates(dolares, cotizaciones) {
+        // Dólares: usa tasa compra (el banco compra tus pesos, vos recibís divisas)
+        const dol = {};
+        dolares.forEach(d => { dol[d.casa] = d; });
+        calcRates['oficial'] = dol['oficial']?.compra ?? null;
+        calcRates['blue'] = dol['blue']?.compra ?? null;
+        calcRates['mep'] = (dol['bolsa'] || dol['mep'])?.compra ?? null;
+        calcRates['ccl'] = (dol['contadoconliqui'] || dol['ccl'])?.compra ?? null;
+        calcRates['cripto'] = dol['cripto']?.compra ?? null;
+        calcRates['tarjeta'] = (dol['tarjeta'] || dol['qatar'])?.compra ?? null;
+        // Otras cotizaciones
+        const eu = findCot(cotizaciones, ['EUR', 'euro', 'Euro']);
+        const re = findCot(cotizaciones, ['BRL', 'real', 'Real']);
+        const cl = findCot(cotizaciones, ['CLP', 'Chile', 'chile']);
+        const uy = findCot(cotizaciones, ['UYU', 'Uruguay', 'uruguay']);
+        calcRates['euro'] = eu?.compra ?? null;
+        calcRates['real'] = re?.compra ?? null;
+        calcRates['clp'] = cl?.compra ?? null;
+        calcRates['uyu'] = uy?.compra ?? null;
+      }
+
+      function runCalc() {
+        const raw = $('calc-input').value.trim();
+        const resultsEl = $('calc-results');
+        if (!raw || isNaN(raw) || Number(raw) <= 0) {
+          resultsEl.innerHTML = '<div class="calc-no-data">Ingresá un monto para ver la conversión</div>';
+          return;
+        }
+        const ars_amount = Math.round(Number(raw)); // entero, sin centavos
+        let html = '';
+        let lastGroup = null;
+        CALC_CURRENCIES.forEach(cur => {
+          if (lastGroup !== null && cur.group !== lastGroup) html += '<div class="calc-sep"></div>';
+          lastGroup = cur.group;
+          const rate = calcRates[cur.id];
+          let resultTxt, copyVal;
+          if (rate != null && rate > 0) {
+            const converted = ars_amount / rate;
+            // Sin decimales para ARS grandes; con 2 decs para monedas pequeñas
+            const decimals = (cur.id === 'clp' || cur.id === 'uyu') ? 0 : 2;
+            resultTxt = converted.toLocaleString('es-AR', {
+              minimumFractionDigits: decimals,
+              maximumFractionDigits: decimals
+            }) + ' ' + cur.code;
+            copyVal = converted.toFixed(decimals) + ' ' + cur.code;
+          } else {
+            resultTxt = 'Sin dato';
+            copyVal = '';
+          }
+          const hasData = rate != null && rate > 0;
+          html += `
+        <div class="calc-row">
+          <span class="cr-flag">${cur.flag}</span>
+          <span class="cr-name">${cur.name}
+            <small>Tasa compra: ${rate != null ? '$ ' + rate.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</small>
+          </span>
+          <span class="cr-result${hasData ? '' : ' pending'}">${resultTxt}</span>
+          <button class="cr-copy" data-value="${copyVal}" ${hasData ? '' : 'disabled'}
+            aria-label="Copiar resultado">
+            📋 Copiar
+          </button>
+        </div>`;
+        });
+        resultsEl.innerHTML = html;
+        // Attach copy handlers
+        resultsEl.querySelectorAll('.cr-copy').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const val = btn.dataset.value;
+            if (!val) return;
+            navigator.clipboard.writeText(val).then(() => {
+              btn.textContent = '✅ Copiado';
+              btn.classList.add('copied');
+              setTimeout(() => {
+                btn.textContent = '📋 Copiar';
+                btn.classList.remove('copied');
+              }, 1800);
+            }).catch(() => {
+              // Fallback for non-HTTPS
+              const ta = document.createElement('textarea');
+              ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
+              document.body.appendChild(ta); ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+              btn.textContent = '✅ Copiado';
+              btn.classList.add('copied');
+              setTimeout(() => { btn.textContent = '📋 Copiar'; btn.classList.remove('copied'); }, 1800);
+            });
+          });
+        });
+      }
+
+      // Recalculate on input (integers only)
+      const calcInput = $('calc-input');
+      calcInput.addEventListener('input', () => {
+        // Strip decimals live
+        if (calcInput.value.includes('.')) calcInput.value = calcInput.value.replace(/\..*/, '');
+        if (calcInput.value.includes(',')) calcInput.value = calcInput.value.replace(/,.*/, '');
+        runCalc();
+      });
+
+      /* ── Ver Más toggle ── */
+      const btn = $('ver-mas-btn');
+      const col = $('more-currencies');
+      btn.addEventListener('click', () => {
+        const open = col.classList.toggle('open');
+        btn.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', open);
+        btn.querySelector('.arrow').textContent = open ? '▴' : '▾';
+        btn.childNodes[0].nodeValue = open ? 'Ocultar monedas ' : 'Ver más monedas ';
+      });
+
+      /* ── Countdown ── */
+      function startTimer() {
+        clearInterval(tmr); cd = REFRESH;
+        tmr = setInterval(() => {
+          cd--;
+          $('countdown').textContent = '⟳ ' + cd + 's';
+          if (cd <= 0) { fetchAll(); cd = REFRESH; }
+        }, 1000);
+      }
+
+      /* ── Resize ── */
+      let rt;
+      window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawChart, 180); });
+
+      /* ── Boot ── */
+      fetchAll();
+      startTimer();
+    })();
+  </script>
+</body>
+
+</html>
