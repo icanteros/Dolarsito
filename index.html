@@ -8,8 +8,8 @@
   <meta name="description" content="Dolarsito" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
   <style>
     *,
     *::before,
@@ -49,11 +49,14 @@
     }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Pixelify Sans', 'Courier New', Courier, monospace;
+      font-optical-sizing: auto;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
+      /* Ajuste de lectura para fuente pixelada */
+      letter-spacing: 0.02em;
     }
 
     /* Fondo principal de lluvia de plata */
@@ -316,8 +319,9 @@
       background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
     }
 
-    /* ── Contenedor Fondo Principales ── */
-    .main-bg-wrapper {
+    /* ── Contenedor Fondo Principales y Calculadora ── */
+    .main-bg-wrapper,
+    .calc-bg-wrapper {
       position: relative;
       border-radius: 20px;
       overflow: hidden;
@@ -325,28 +329,30 @@
       border: 1px solid rgba(116, 172, 223, 0.15);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       padding: 1.5rem;
+      background-position: center;
+      background-size: cover;
+      background-repeat: no-repeat;
     }
 
-    .main-bg-wrapper::before {
+    .main-bg-wrapper {
+      background-image: url('images/dolARG.png');
+    }
+
+    .calc-bg-wrapper {
+      background-image: url('images/calculARG.png');
+    }
+
+    .main-bg-wrapper::before,
+    .calc-bg-wrapper::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(6, 9, 26, 0.65) 0%, rgba(6, 9, 26, 0.9) 100%);
+      background: linear-gradient(135deg, rgba(6, 9, 26, 0.45) 0%, rgba(6, 9, 26, 0.75) 100%);
       z-index: 1;
     }
 
-    .mq-bg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      z-index: 0;
-    }
-
-    .main-bg-wrapper>.cards-grid {
+    .main-bg-wrapper>.cards-grid,
+    .calc-bg-wrapper>* {
       position: relative;
       z-index: 2;
     }
@@ -399,15 +405,15 @@
     }
 
     .card-buy span.lbl {
-      font-size: 0.62rem;
-      color: var(--muted);
-      font-weight: 500;
+      font-size: 0.72rem;
+      color: var(--muted2);
+      font-weight: 600;
     }
 
     .card-sell span.lbl {
-      font-size: 0.62rem;
-      color: var(--muted);
-      font-weight: 500;
+      font-size: 0.72rem;
+      color: var(--muted2);
+      font-weight: 600;
     }
 
     .card-spread {
@@ -648,24 +654,18 @@
 
     /* ── Calculadora ── */
     .calc-card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
+      background: transparent;
+      border: none;
       border-radius: 18px;
-      padding: 1.6rem;
-      margin-bottom: 2rem;
-      backdrop-filter: blur(10px);
+      padding: 0;
+      margin-bottom: 0;
+      backdrop-filter: none;
       position: relative;
       overflow: hidden;
     }
 
     .calc-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(116, 172, 223, 0.6), transparent);
+      display: none;
     }
 
     .calc-input-wrap {
@@ -771,10 +771,10 @@
 
     .calc-row .cr-name small {
       display: block;
-      font-size: 0.6rem;
-      font-weight: 400;
-      color: var(--muted);
-      margin-top: 0.1rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted2);
+      margin-top: 0.15rem;
     }
 
     .calc-row .cr-result {
@@ -1229,8 +1229,6 @@
     <div class="section-title">⭐ Principales</div>
 
     <div class="main-bg-wrapper">
-      <!-- "Buscar una imagen que se ajuste al diseño"
-      <img src="images/dolARG.png" alt="" class="mq-bg" /> -->
       <div class="cards-grid" id="main-grid">
 
         <!-- Dólar Oficial -->
@@ -1333,17 +1331,22 @@
 
     <!-- ═══ CALCULADORA ARS ═══ -->
     <div class="section-title" style="margin-top:0.5rem">🧮 Calculadora · ARS → Divisas</div>
-    <div class="calc-card">
-      <div class="calc-input-wrap">
-        <span class="calc-prefix">ARS💲</span>
-        <input id="calc-input" type="number" min="0" step="1" inputmode="numeric" placeholder="Ingresá el monto…"
-          aria-label="Monto en pesos argentinos" />
-      </div>
-      <div class="calc-hint">Calculado con la tasa de <span>compra</span> · se actualiza automáticamente</div>
-      <div class="calc-results" id="calc-results">
-        <div class="calc-no-data">Ingresá un monto para ver la conversión</div>
+    <div class="calc-bg-wrapper">
+      <div class="calc-card">
+        <div class="calc-input-wrap">
+          <span class="calc-prefix">ARS💲</span>
+          <input id="calc-input" type="text" inputmode="numeric" placeholder="Ingresá el monto…"
+            aria-label="Monto en pesos argentinos" autocomplete="off" />
+          <!-- Advertencia de solo números para la calculadora-->
+          <!-- <div id="calc-warning" class="calc-warning">⚠️ Solo números</div>-->
+        </div>
+        <div class="calc-hint">Calculado con la tasa de <span>compra</span> · se actualiza automáticamente</div>
+        <div class="calc-results" id="calc-results">
+          <div class="calc-no-data">Ingresá un monto para ver la conversión</div>
+        </div>
       </div>
     </div>
+
 
     <!-- ═══ GRÁFICO DE SESIÓN ═══ -->
     <div class="chart-card">
@@ -1702,13 +1705,45 @@
         });
       }
 
-      // Recalculate on input (integers only)
+      // Recalculate on input (integers only) and Validate Characters
+      let alertTimer = null;
+      const calcAlert = $('calc-alert');
       const calcInput = $('calc-input');
-      calcInput.addEventListener('input', () => {
-        // Strip decimals live
+
+      function triggerNumAlert() {
+        calcAlert.classList.add('show');
+        clearTimeout(alertTimer);
+        alertTimer = setTimeout(() => {
+          calcAlert.classList.remove('show');
+        }, 1500);
+      }
+
+      // Evita tipeo de teclas no numéricas desde el arranque
+      calcInput.addEventListener('keypress', (e) => {
+        if (!/^[0-9]+$/.test(e.key) && e.key !== 'Enter') {
+          e.preventDefault();
+          triggerNumAlert();
+        }
+      });
+
+      calcInput.addEventListener('input', (e) => {
+        const val = calcInput.value;
+        const numbersOnly = val.replace(/[^0-9]/g, '');
+
+        if (val !== numbersOnly) {
+          calcInput.value = numbersOnly;
+          triggerNumAlert();
+        }
+
+        // Strip decimals live (fallback)
         if (calcInput.value.includes('.')) calcInput.value = calcInput.value.replace(/\..*/, '');
         if (calcInput.value.includes(',')) calcInput.value = calcInput.value.replace(/,.*/, '');
+
         runCalc();
+      });
+
+      calcInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') runCalc();
       });
 
       /* ── Ver Más toggle ── */
