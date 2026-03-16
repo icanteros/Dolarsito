@@ -4,6 +4,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://dolarapi.com; img-src 'self' data:;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <title>Dolarsito · Cotizaciones en Tiempo Real</title>
   <meta name="description" content="Dolarsito" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1389,6 +1393,15 @@
         : '—';
       const spread = (c, v) => (c != null && v != null) ? ars(v - c) : '—';
       const hhmm = d => d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const escapeHtml = str => {
+        if (str == null) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      };
 
       function flash(el, cur, prev_) {
         if (prev_ == null || cur === prev_) return;
@@ -1398,6 +1411,18 @@
       }
 
       /* ── Fetch all ── */
+      function isValidDolarItem(item) {
+        return item && typeof item === 'object' && typeof item.casa === 'string' &&
+          (item.compra == null || typeof item.compra === 'number') &&
+          (item.venta == null || typeof item.venta === 'number');
+      }
+
+      function isValidCotizacionItem(item) {
+        return item && typeof item === 'object' && typeof item.moneda === 'string' &&
+          (item.compra == null || typeof item.compra === 'number') &&
+          (item.venta == null || typeof item.venta === 'number');
+      }
+
       async function fetchAll() {
         try {
           const [dolResp, cotResp] = await Promise.all([
@@ -1405,8 +1430,18 @@
             fetch(BASE + '/cotizaciones', { cache: 'no-store' }),
           ]);
           if (!dolResp.ok || !cotResp.ok) throw new Error('HTTP error');
-          const dolares = await dolResp.json();
-          const cotizaciones = await cotResp.json();
+          const rawDolares = await dolResp.json();
+          const rawCotizaciones = await cotResp.json();
+          
+          if (!Array.isArray(rawDolares) || !Array.isArray(rawCotizaciones)) {
+            throw new Error('Invalid API response format');
+          }
+
+          const dolares = rawDolares.filter(isValidDolarItem);
+          const cotizaciones = rawCotizaciones.filter(isValidCotizacionItem);
+
+          if (dolares.length === 0) throw new Error('No valid dolar data');
+          
           $('error-msg').style.display = 'none';
           render(dolares, cotizaciones);
         } catch (e) {
@@ -1664,14 +1699,19 @@
             copyVal = '';
           }
           const hasData = rate != null && rate > 0;
+          const safeFlag = escapeHtml(cur.flag);
+          const safeName = escapeHtml(cur.name);
+          const safeCode = escapeHtml(cur.code);
+          const safeResult = escapeHtml(resultTxt);
+          const safeRate = rate != null ? '$ ' + rate.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
           html += `
         <div class="calc-row">
-          <span class="cr-flag">${cur.flag}</span>
-          <span class="cr-name">${cur.name}
-            <small>Tasa compra: ${rate != null ? '$ ' + rate.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</small>
+          <span class="cr-flag">${safeFlag}</span>
+          <span class="cr-name">${safeName}
+            <small>Tasa compra: ${safeRate}</small>
           </span>
-          <span class="cr-result${hasData ? '' : ' pending'}">${resultTxt}</span>
-          <button class="cr-copy" data-value="${copyVal}" ${hasData ? '' : 'disabled'}
+          <span class="cr-result${hasData ? '' : ' pending'}">${safeResult}</span>
+          <button class="cr-copy" data-value="${escapeHtml(copyVal)}" ${hasData ? '' : 'disabled'}
             aria-label="Copiar resultado">
             📋 Copiar
           </button>
